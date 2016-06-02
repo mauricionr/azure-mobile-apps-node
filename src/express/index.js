@@ -2,7 +2,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // ----------------------------------------------------------------------------
 /**
-@module azure-mobile-apps/express
+@module azure-mobile-apps/src/express
 @description
 This module is the entry point for adding an Azure Mobile App to an instance of
 an express web server. It is returned from the root azure-mobile-apps module
@@ -11,23 +11,17 @@ when the configuration passed specifies the express platform.
 var express = require('express'),
     customApi = require('./api'),
     tables = require('./tables'),
+    dataProvider = require('../data'),
+    knownPlugins = require('./knownPlugins'),
     table = require('./tables/table'),
-    notifications = require('./middleware/notifications'),
-    createContext = require('./middleware/createContext'),
-    authenticate = require('./middleware/authenticate'),
-    handleError = require('./middleware/handleError'),
-    crossOrigin = require('./middleware/crossOrigin'),
-    renderResults = require('./middleware/renderResults'),
-    version = require('./middleware/version'),
-    log = require('../logger'),
-    assert = require('../utilities/assert').argument;
+    log = require('../logger');
 
 /**
  * An {@link http://expressjs.com/4x/api.html#router express router} extended with the following properties
  * @typedef mobileAppRouter
- * @property {module:azure-mobile-apps/express/api} api - Contains functions to register api definitions with azure-mobile-apps
- * @property {module:azure-mobile-apps/express/tables} tables - Contains functions to register table definitions with azure-mobile-apps
- * @property {module:azure-mobile-apps/express/tables/table} table - Factory function for creating table definition objects
+ * @property {module:azure-mobile-apps/src/express/api} api - Contains functions to register api definitions with azure-mobile-apps
+ * @property {module:azure-mobile-apps/src/express/tables} tables - Contains functions to register table definitions with azure-mobile-apps
+ * @property {module:azure-mobile-apps/src/express/tables/table} table - Factory function for creating table definition objects
  * @property {configuration} configuration - Top level configuration that azure-mobile-apps was configured with
  */
 
@@ -38,27 +32,41 @@ var express = require('express'),
  */
 module.exports = function (configuration) {
     configuration = configuration || {};
-    configuration.data = configuration.data || { provider: 'memory' };
-    var tableMiddleware = tables(configuration),
+
+    log.silly("Configured with the following values:\n" + JSON.stringify(configuration, null, 2));
+
+    var data = dataProvider(configuration),
+        tableMiddleware = tables(configuration, data),
         apiMiddleware = customApi(configuration),
-        notificationMiddleware = notifications(configuration),
-        authMiddleware = authenticate(configuration),
-        createContextMiddleware = createContext(configuration),
-        handleErrorMiddleware = handleError(configuration),
-        crossOriginMiddleware = crossOrigin(configuration),
-        versionMiddleware = version(configuration),
+        plugins = knownPlugins(configuration, log),
         customMiddlewareRouter = express.Router(),
         mobileApp = express.Router();
 
-    mobileApp.use(versionMiddleware)
-        .use(createContextMiddleware)
-        .use(authMiddleware)
-        .use(crossOriginMiddleware)
+    if(configuration.hosted)
+        mobileApp
+            .use(middleware('exposeHeaders'));
+    else
+        mobileApp
+            .use(middleware('crossOrigin'))
+            .use(configuration.authStubRoute || '/.auth/login/:provider', middleware('authStub'));
+
+    mobileApp
+        .use(middleware('version'))
+        .use(middleware('createContext'))
+        .use(middleware('authenticate'))
         .use(customMiddlewareRouter)
-        .use(notificationMiddleware)
+        .use(configuration.notificationRootPath || '/push/installations', middleware('notifications'))
         .use(configuration.apiRootPath || '/api', apiMiddleware)
-        .use(configuration.tableRootPath || '/tables', tableMiddleware, renderResults)
-        .use(handleErrorMiddleware);
+        .use(configuration.tableRootPath || '/tables', middleware('apiVersionCheck'), tableMiddleware, middleware('renderResults'));
+
+    if(configuration.homePage)
+        mobileApp.use('/', express.static(__dirname + '/../templates/static'));
+
+    mobileApp.use(configuration.swaggerPath, middleware('swagger'));
+    mobileApp.use(middleware('handleError'));
+
+    if(plugins.length)
+        customMiddlewareRouter.use(plugins);
 
     var api = function (req, res, next) {
         mobileApp(req, res, next);
@@ -70,15 +78,20 @@ module.exports = function (configuration) {
     api.configuration = configuration;
     api.use = function () {
         customMiddlewareRouter.use.apply(customMiddlewareRouter, arguments);
+        return api;
     }
 
     return api;
+
+    function middleware(name) {
+        return require('./middleware/' + name)(configuration);
+    }
 };
 
 /**
 Static factory function for creating table definition objects. Intended to be used from imported table configuration files.
 @function
-@returns {module:azure-mobile-apps/express/tables/table}
+@returns {module:azure-mobile-apps/src/express/tables/table}
 @example require('azure-mobile-apps/express').table();
 */
 module.exports.table = table;

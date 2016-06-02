@@ -2,7 +2,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // ----------------------------------------------------------------------------
 /**
- * @module azure-mobile-apps/notifications
+ * @module azure-mobile-apps/src/notifications
  * @description Functions for managing notification installations and the NH client
  */
 var util = require('util'),
@@ -17,13 +17,10 @@ var util = require('util'),
  * @return An object with members described below
  */
 module.exports = function (configuration) {
-    var nhClient = configuration.client || new NotificationHubService(configuration.hubName, configuration.connectionString
-        || configuration.endpoint, configuration.sharedAccessKeyName, configuration.sharedAccessKeyValue);
+    var nhClient = createClient();
 
     return {
-        /**
-         * Returns an instance of the {@link http://azure.github.io/azure-sdk-for-node/azure-sb/latest/NotificationHubService.html|Notification Hubs Service}
-         */
+        /** Returns an instance of the {@link http://azure.github.io/azure-sdk-for-node/azure-sb/latest/NotificationHubService.html|Notification Hubs Service} */
         getClient: function () { return nhClient; },
 
         /**
@@ -33,20 +30,12 @@ module.exports = function (configuration) {
          * @param  {string} [user] The user id to associate with the installation
          * @return A promise that yields the notification hubs client response
          */
-        putInstallation: function (installationId, installation, user) {
+        putInstallation: function (installationId, installation, userId) {
             installation.installationId = installationId;
             return getTagsByInstallationId(installationId)
                 .then(function (tags) {
-                    installation.tags = addUserTag(tags, user);
-                    return promises.create(function (result, reject) {
-                        nhClient.createOrUpdateInstallation(installation, function (err, res) {
-                            if (err) {
-                                reject(err);
-                            } else {
-                                result(res);
-                            }
-                        });
-                    });
+                    installation.tags = addUserTag(tags, userId);
+                    return promises.wrap(nhClient.createOrUpdateInstallation, nhClient)(installation);
                 });
         },
 
@@ -56,15 +45,7 @@ module.exports = function (configuration) {
          * @return A promise that yields the notification hubs client response
          */
         deleteInstallation: function (installationId) {
-            return promises.create(function (result, reject) {
-                nhClient.deleteInstallation(installationId, function (err, res) {
-                    if (err) {
-                        return reject(err);
-                    } else {
-                        return result(res);
-                    }
-                });
-            });
+            return promises.wrap(nhClient.deleteInstallation, nhClient)(installationId);
         }
     };
 
@@ -74,12 +55,12 @@ module.exports = function (configuration) {
         return mapRegistrations(installationIdAsTag, function (registration) { return registration.Tag });
     }
 
-    function addUserTag(tags, user) {
-        if (user) {
+    function addUserTag(tags, userId) {
+        if (userId) {
             tags = tags.filter(function (tag) {
                 return !(tag && tag.indexOf(UserIdTagPrefix) === 0);
             });
-            tags.push(UserIdTagPrefix + user);
+            tags.push(UserIdTagPrefix + userId);
         }
         return tags;
     }
@@ -97,14 +78,26 @@ module.exports = function (configuration) {
                 nhClient.listRegistrationsByTag(tag, { top: top, skip: skip }, function (err, res) {
                     if (err) {
                         reject(err);
-                    } else if (res.length === 0) {
+                    }
+                    results = results.concat(res.map(mapFunction));
+                    if (res.length < top) {
                         result(results);
                     } else {
-                        results = results.concat(res.map(mapFunction));
                         listRegistrations(top, skip + top);
                     }
                 });
             }
         });
+    }
+
+    function createClient() {
+        if(!configuration)
+            return;
+        if(configuration.client)
+            return configuration.client;
+        if(configuration.hubName && configuration.connectionString)
+            return new NotificationHubService(configuration.hubName, configuration.connectionString);
+        if(configuration.hubName && configuration.endpoint && configuration.sharedAccessKeyName && configuration.sharedAccessKeyValue)
+            return new NotificationHubService(configuration.hubName, configuration.endpoint, configuration.sharedAccessKeyName, configuration.sharedAccessKeyValue);
     }
 }

@@ -2,17 +2,20 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // ----------------------------------------------------------------------------
 /**
-@module azure-mobile-apps/express/api
+@module azure-mobile-apps/src/express/api
 @description This module contains functionality for adding custom apis to an Azure
 Mobile App. It returns a router that can be attached to an express app with
 some additional functions for registering apis.
 */
 var express = require('express'),
-    loader = require('../../configuration/loader'),
+    bodyParser = require('body-parser'),
     logger = require('../../logger'),
     assert = require('../../utilities/assert').argument,
-    authorise = require('../middleware/authorize');
-    supportedVerbs = ['get', 'post', 'put', 'patch', 'delete'];
+    authorize = require('../middleware/authorize'),
+    notAllowed = require('../middleware/notAllowed'),
+    utilities = require('../../utilities'),
+    types = require('../../utilities/types'),
+    importDefinition = require('../../configuration/importDefinition');
 
 /**
 Create an instance of an express router for routing and handling api requests.
@@ -22,6 +25,9 @@ Create an instance of an express router for routing and handling api requests.
 module.exports = function (configuration) {
     var router = express.Router();
 
+    // by default, only parse json
+    router.use(bodyParser.json());
+
     /**
     Register a single api with the specified definition.
     @function add
@@ -30,23 +36,8 @@ module.exports = function (configuration) {
     */
     router.add = function (name, definition) {
         assert(name, 'An api name was not specified');
-        var apiRouter = express.Router();
-
-        Object.getOwnPropertyNames(definition).forEach(function (property) {
-            if (supportedVerbs.some(function (verb) { return verb === property; })) {
-                if (definition.authorise || definition[property].authorise) {
-                    delete definition[property].authorise;
-                    definition[property] = [authorise].concat(definition[property]);
-                    logger.debug("Adding authorisation to " + property + " for api " + name);
-                }
-                logger.debug("Adding method " + property + " to api " + name);
-                apiRouter[property]('/', definition[property]);
-            } else if (property !== 'authorise') {
-                logger.warn("Unrecognized property '" + property + "' in api " + name);
-            }
-        });
-
-        router.use('/' + name, apiRouter);
+        definition.name = name;
+        router.use('/' + name, buildApiRouter(definition));
     };
 
     /**
@@ -56,15 +47,59 @@ module.exports = function (configuration) {
     The path is relative to configuration.basePath that defaults to the location of your startup module.
     The api name will be derived from the physical file name.
     */
-    router.import = function (path) {
-        assert(path, 'A path to api configuration file(s) was not specified');
-        var apis = loader.loadPath(path, configuration.basePath);
-        Object.keys(apis).forEach(function (name) {
-            var definition = apis[name];
-
-            router.add(name, definition);
-        });
-    };
+    router.import = importDefinition.import(configuration.basePath, router.add);
 
     return router;
+
+    function buildApiRouter(definition) {
+        var apiRouter = express.Router(),
+            routeWasAdded = false;
+
+        Object.getOwnPropertyNames(definition).forEach(function (method) {
+            var middleware = getDefinedMiddleware(definition[method]);
+            if (types.isFunction(middleware) || types.isArray(middleware)) {
+                if (supportsVerb(method)) {
+                    routeWasAdded = true;
+                    logger.verbose("Adding method " + method + " to api " + definition.name);
+                    apiRouter[method]('/', configureMiddleware(definition, method, middleware));
+                } else {
+                    logger.warn("Unsupported method '" + method + "' in api " + definition.name);
+                }
+            }
+        });
+
+        if(!routeWasAdded)
+            logger.warn("No routes were added to api " + definition.name);
+
+        return apiRouter;
+    }
+
+    // definition is an api definition object
+    // returns a middleware function or an array of middleware function
+    function configureMiddleware(definition, method, middleware) {
+        importDefinition.setAccess(definition, method);
+
+        if (definition[method].disable) {
+            logger.verbose("Disabling " + method + " for api " + definition.name);
+            return notAllowed(method);
+        }
+
+        if (definition[method].authorize) {
+            logger.verbose("Adding authorization to " + method + " for api " + definition.name);
+            middleware = [authorize].concat(middleware);
+        }
+
+        return middleware;
+    }
+
+    function getDefinedMiddleware(methodDefinition) {
+        // method definitions are either a function, an array of functions, or an array-like object
+        // if array-like object convert to array
+        // {'0': addHeader, '1': return200, authorize: true} should convert to [addHeader,return200]
+        return utilities.object.convertArrayLike(methodDefinition);
+    }
+
+    function supportsVerb(verb) {
+        return !!router[verb] && types.isFunction(router[verb]);
+    }
 }

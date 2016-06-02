@@ -1,0 +1,13 @@
+{
+    "name": "jsontable",
+    "softDelete": true,
+    "dynamicSchema": false,
+    "authorize": false,
+    "read": {
+        "authorize": true
+    },
+    "databaseTableName": "databasejsontable",
+    "schema": "dbo",
+    "columns": { "name": "string", "date1": "date" },
+    "indexes": [ "name" ]
+}

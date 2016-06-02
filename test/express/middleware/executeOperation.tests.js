@@ -3,9 +3,9 @@
 // ----------------------------------------------------------------------------
 ﻿var executeOperation = require('../../../src/express/middleware/executeOperation'),
     promises = require('../../../src/utilities/promises'),
-    data = require('../infrastructure/data')([{ id: 1, value: 'test' }]),
+    data = require('../../../src/data/memory')({ 'table': { '1': { id: 1, value: 'test' } } }),
     expect = require('chai').expect,
-    req = { method: 'get', azureMobile: { data: data } };
+    req = { method: 'get', azureMobile: { data: data, table: { name: 'table' } } };
 
 describe('azure-mobile-apps.express.middleware.executeOperation', function() {
     it('sets results when no operation is provided', function () {

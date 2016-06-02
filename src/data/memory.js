@@ -1,10 +1,13 @@
 // ----------------------------------------------------------------------------
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // ----------------------------------------------------------------------------
-var promises = require('../utilities/promises');
+var promises = require('../utilities/promises'),
+    log = require('../logger');
 
-module.exports = function () {
-    var tables = {};
+module.exports = function (tables) {
+    log.warn('The memory data provider is deprecated and will be removed from future versions. Use the sqlite provider instead.');
+
+    tables = tables || {};
 
     return function (table) {
         return {
@@ -22,11 +25,18 @@ module.exports = function () {
             },
             delete: function (id, version) {
                 delete items(table)[id];
-                return promises.resolved(1);
+                return promises.resolved(id);
             },
             undelete: function (id) {
                 // unsupported
                 return promises.resolved({ id: id });
+            },
+            truncate: function () {
+                tables[table.name] = {};
+                return promises.resolved();
+            },
+            initialize: function () {
+                return promises.resolved();
             }
         }
 

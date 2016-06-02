@@ -37,7 +37,7 @@ describe('azure-mobile-apps.notifications.installation', function () {
             });
     });
 
-    it('creates installation with user', function () {
+    it('creates installation with user id', function () {
         return notifs.putInstallation('id', installation, 'user')
             .then(function (res) {
                 var arg = clientStub.createOrUpdateInstallation.args[0][0];
@@ -48,7 +48,7 @@ describe('azure-mobile-apps.notifications.installation', function () {
     it('creates installation with tags', function () {
         return notifs.putInstallation('tags', installation)
             .then(function (res) {
-                expect(clientStub.listRegistrationsByTag).to.be.calledTwice;
+                expect(clientStub.listRegistrationsByTag).to.be.calledOnce;
                 var arg = clientStub.createOrUpdateInstallation.args[0][0];
                 expect(arg.tags).to.deep.equal(['tag1', 'tag2']);
             });
@@ -57,9 +57,29 @@ describe('azure-mobile-apps.notifications.installation', function () {
     it('creates installation with user and tags', function () {
         return notifs.putInstallation('tags', installation, 'user')
             .then(function (res) {
-                expect(clientStub.listRegistrationsByTag).to.be.calledTwice;
+                expect(clientStub.listRegistrationsByTag).to.be.calledOnce;
                 var arg = clientStub.createOrUpdateInstallation.args[0][0];
                 expect(arg.tags).to.deep.equal(['tag1', 'tag2', '_UserId:user']);
+            });
+    });
+
+    it('creates installation with tags that rollover', function () {
+        return notifs.putInstallation('loop', installation)
+            .then(function (res) {
+                expect(clientStub.listRegistrationsByTag).to.be.calledTwice;
+                var arg = clientStub.createOrUpdateInstallation.args[0][0];
+                expect(arg.tags).to.deep.equal(createTags(0, 101));
+            });
+    });
+
+    it('creates installation with user and tags that rollover', function () {
+        return notifs.putInstallation('loop', installation, 'user')
+            .then(function (res) {
+                expect(clientStub.listRegistrationsByTag).to.be.calledTwice;
+                var arg = clientStub.createOrUpdateInstallation.args[0][0];
+                var tags = createTags(0, 101);
+                tags.push('_UserId:user');
+                expect(arg.tags).to.deep.equal(tags);
             });
     });
 
@@ -70,8 +90,26 @@ describe('azure-mobile-apps.notifications.installation', function () {
         stub.listRegistrationsByTag = sinon.stub().yields(undefined, []);
         stub.listRegistrationsByTag.withArgs('$InstallationId:{tags}')
                 .onCall(0).yields(undefined, [{ Tag: 'tag1' }, { Tag: 'tag2'} ]);
+        stub.listRegistrationsByTag.withArgs('$InstallationId:{loop}')
+                .onCall(0).yields(undefined, createTagRegistrations(0, 100))
+                .onCall(1).yields(undefined, createTagRegistrations(100, 1));
 
         return stub;
+    }
+
+    function createTagRegistrations(skip, take) {
+        var registrations = [];
+        for(var i = skip; i < skip + take; i++) {
+            registrations.push({ Tag: 'tag' + i });
+        }
+        return registrations;
+    }
+
+    function createTags(skip, take) {
+        var tags = [];
+        for(var i = skip; i < skip + take; i++)
+            tags.push('tag' + i);
+        return tags;
     }
 
     function createInstallation () {

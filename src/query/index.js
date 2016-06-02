@@ -2,10 +2,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // ----------------------------------------------------------------------------
 /**
-@module azure-mobile-apps/query
-@description Functionality for creating {@link https://github.com/Azure/queryjs query.js} objects
+@module azure-mobile-apps/src/query
+@description Functionality for creating {@link https://github.com/Azure/azure-query-js azure-query-js} objects
 */
-var Query = require('query.js').Query,
+var Query = require('azure-query-js').Query,
     assert = require('../utilities/assert').argument;
 
 module.exports = {
@@ -34,7 +34,7 @@ module.exports = {
     },
     /**
     Converts a query to an object containing OData query information
-    @param {module:queryjs/Query} query - The query.js Query object to convert
+    @param {module:queryjs/Query} query - The azure-query-js Query object to convert
     */
     toOData: function (query) {
         return Query.Providers.OData.toOData(query)

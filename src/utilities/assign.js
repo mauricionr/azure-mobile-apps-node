@@ -1,31 +1,39 @@
 // ----------------------------------------------------------------------------
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // ----------------------------------------------------------------------------
-﻿module.exports = function (target, source) {
-    var from;
-    var keys;
-    var to = toObject(target);
+/**
+@module azure-mobile-apps/src/utilities/assign
+*/
+/**
+Recursively assign properties from provided objects. Arguments are processed right to left.
+@param {object} source Any number of objects to assign
+*/
+module.exports = function assign() {
+    var result = {},
+        args = Array.prototype.slice.call(arguments),
+        reduceArrays = typeof args[args.length - 1] == 'function' ? args.pop() : undefined;
 
-    for (var s = 1; s < arguments.length; s++) {
-        from = arguments[s];
-        keys = Object.keys(Object(from));
+    for(var i = 0, l = args.length; i < l; i++) {
+        var o = args[i];
 
-        for (var i = 0; i < keys.length; i++) {
-            // if both values are objects, assign recursively
-            if(typeof to[keys[i]] === 'object' && typeof from[keys[i]] === 'object')
-                module.exports(to[keys[i]], from[keys[i]]);
+        for (var prop in o) {
+            if (!o.hasOwnProperty(prop))
+                continue;
+
+            if (typeof o[prop] == 'object' && typeOf(o[prop]) == 'object')
+                result[prop] = assign(result[prop] || {}, o[prop], reduceArrays);
+
+            else if (reduceArrays && typeOf(o[prop]) == 'array')
+                result[prop] = reduceArrays(result[prop] || [], Array.prototype.slice.call(o[prop]));
+
             else
-                to[keys[i]] = from[keys[i]];
+                result[prop] = o[prop];
         }
     }
 
-    return to;
+    return result;
 };
 
-function toObject(val) {
-    if (val === null || val === undefined) {
-        throw new TypeError('Object.assign cannot be called with null or undefined');
-    }
-
-    return Object(val);
+function typeOf(obj) {
+    return Object.prototype.toString.call(obj).match(/\[object\s*([^\]]+)\]/)[1].toLowerCase();
 }

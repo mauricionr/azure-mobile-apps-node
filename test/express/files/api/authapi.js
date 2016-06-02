@@ -4,7 +4,11 @@ var api = module.exports = {
     },
     delete: function(req, res, next) {
         res.status(200).end();
+    },
+    post: function (req, res, next) {
+        res.status(200).end();
     }
 };
 
-api.authorise = true;
+api.authorize = true;
+api.post.disable = true;

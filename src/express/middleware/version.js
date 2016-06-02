@@ -1,6 +1,15 @@
 // ----------------------------------------------------------------------------
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // ----------------------------------------------------------------------------
+/**
+@module azure-mobile-apps/src/express/middleware/version
+@description Adds the current Zumo server version to responses as an HTTP header.
+*/
+
+/**
+Create a new instance of the version middleware
+@param {configuration} configuration The mobile app configuration
+*/
 module.exports = function(configuration) {
     return function (req, res, next) {
         if(configuration.version) {

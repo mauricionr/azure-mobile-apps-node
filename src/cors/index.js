@@ -2,7 +2,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // ----------------------------------------------------------------------------
 /**
-@module azure-mobile-apps/cors
+@module azure-mobile-apps/src/cors
 @description Helper functions for negotiating cross-origin resource sharing requests
 */
 var url = require('url');
@@ -15,7 +15,7 @@ Create an instance of a helper based on the supplied configuration.
 module.exports = function (configuration) {
     var isNullAllowed = false,
         headersRegex = /^[a-z0-9\-\,\s]{1,500}$/i,
-        originRegexes = buildOriginRegexes(configuration && configuration.origins);
+        originRegexes = buildOriginRegexes(configuration && configuration.hostnames);
 
     var api = {
         /**
@@ -32,6 +32,7 @@ module.exports = function (configuration) {
                 // CORS doesn't permit multiple origins or wildcards, so the standard
                 // pattern is to validate the incoming origin and echo it back if accepted.
                 responseHeaders['Access-Control-Allow-Origin'] = origin;
+                responseHeaders['Access-Control-Expose-Headers'] = configuration.exposeHeaders;
 
                 if (headers && isAllowedHeaders(headers)) {
                     // CORS doesn't permit * here, so echo back whatever is requested
@@ -119,11 +120,11 @@ module.exports = function (configuration) {
         return origin;
     }
 
-    function buildOriginRegexes(origins) {
-        if(!origins)
+    function buildOriginRegexes(hostnames) {
+        if(!hostnames)
             return [];
 
-        return origins.map(function(origin) {
+        return hostnames.map(function(origin) {
             // included for compatibility with V1 { 'host': 'www.example.com' } origins
             origin = parseOrigin(origin);
 

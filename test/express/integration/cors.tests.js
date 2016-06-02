@@ -4,26 +4,26 @@
 var expect = require('chai').expect,
     supertest = require('supertest-as-promised'),
     express = require('express'),
-    mobileApps = require('../../../src/express'),
+    mobileApps = require('../../appFactory').ignoreEnvironment,
     accessControlRequestHeader = 'access-control-request-headers',
     accessControlAllowOriginHeader = 'Access-Control-Allow-Origin',
     accessControlAllowMethodsHeader = 'Access-Control-Allow-Methods',
     accessControlAllowHeadersHeader = 'Access-Control-Allow-Headers',
+    accessControlExposeHeadersHeader = 'Access-Control-Expose-Headers',
     accessControlMaxAgeHeader = 'Access-Control-Max-Age',
     expectedAllowedMethods = 'GET, PUT, PATCH, POST, DELETE, OPTIONS',
 
-    config, app, mobileApp;
+    app, mobileApp;
 
 describe('azure-mobile-apps.express.integration.cors', function () {
     beforeEach(function () {
-        config = {
+        app = express();
+        mobileApp = mobileApps({
             cors: {
                 maxAge: 6000,
-                origins: ['localhost', { host: '*.v1.com' }, 'test.*.net']
+                hostnames: ['localhost', { host: '*.v1.com' }, 'test.*.net']
             }
-        };
-        app = express();
-        mobileApp = mobileApps(config);
+        });
         mobileApp.tables.add('todoitem');
         app.use(mobileApp);
     });
@@ -71,6 +71,26 @@ describe('azure-mobile-apps.express.integration.cors', function () {
             .set(accessControlRequestHeader, 'list, of, headers')
             .expect(accessControlAllowOriginHeader, 'http://test.blah.net')
             .expect(accessControlAllowHeadersHeader, 'list, of, headers')
+            .expect(200);
+    });
+
+    it('sets exposed headers', function () {
+        return supertest(app)
+            .get('/tables/todoitem')
+            .set('origin', 'http://test.blah.net')
+            .expect(accessControlExposeHeadersHeader, 'Link,Etag')
+            .expect(200);
+    });
+
+    it('sets exposed headers when hosted', function () {
+        app = express();
+        mobileApp = mobileApps({ hosted: true });
+        mobileApp.tables.add('todoitem');
+        app.use(mobileApp);
+        return supertest(app)
+            .get('/tables/todoitem')
+            .set('origin', 'http://test.blah.net')
+            .expect(accessControlExposeHeadersHeader, 'Link,Etag')
             .expect(200);
     });
 });

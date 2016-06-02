@@ -3,17 +3,15 @@
 // ----------------------------------------------------------------------------
 var expect = require('chai').use(require('chai-subset')).expect,
     request = require('supertest-as-promised'),
-    config = require('../infrastructure/config')(),
     express = require('express'),
-    mobileApps = require('../../../src/express'),
-    data = require('../../../src/data/sql'),
+    mobileApps = require('../../appFactory'),
     queries = require('../../../src/query'),
     app, mobileApp;
 
 describe('azure-mobile-apps.express.integration.api', function () {
     beforeEach(function () {
         app = express();
-        mobileApp = mobileApps({ data: config });
+        mobileApp = mobileApps({ data: { provider: 'memory' } });
     });
 
     it('exposes data access object through request object', function () {

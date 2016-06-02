@@ -7,7 +7,7 @@ var expect = require('chai').expect,
 describe('azure-mobile-apps.cors.origin', function() {
     it('allows protocol/port variations on an allowed hostname', function() {
         var cors = corsModule({
-            origins: [{
+            hostnames: [{
                 host: 'some.site.example.com'
             }, {
                 host: 'wildcard.*.example.com'
@@ -30,7 +30,7 @@ describe('azure-mobile-apps.cors.origin', function() {
 
     it('allows and ignores embedded username/passwords in an allowed hostname', function() {
         var cors = corsModule({
-            origins: [{
+            hostnames: [{
                 host: 'some.site.example.com'
             }, {
                 host: 'wildcard.*.example.com'
@@ -42,7 +42,7 @@ describe('azure-mobile-apps.cors.origin', function() {
 
     it('disallows disallowed hostnames', function() {
         var cors = corsModule({
-            origins: [{
+            hostnames: [{
                 host: 'some.site.example.com'
             }, {
                 host: 'wildcard.*.example.com'
@@ -62,7 +62,7 @@ describe('azure-mobile-apps.cors.origin', function() {
     it('allows null filesystem origins when null is specified', function() {
         // This whitelist allows any legal http/https hostname
         var cors = corsModule({
-            origins: [{
+            hostnames: [{
                 host: 'null'
             }]
         });
@@ -74,7 +74,7 @@ describe('azure-mobile-apps.cors.origin', function() {
     it('allows only specific origins when * is specified', function() {
         // This whitelist allows any legal http/https hostname
         var cors = corsModule({
-            origins: [{
+            hostnames: [{
                 host: '*'
             }]
         });
@@ -92,7 +92,7 @@ describe('azure-mobile-apps.cors.origin', function() {
     it('allows a trailing slash in an origin, but no other path', function() {
         // This whitelist allows any legal http/https hostname
         var cors = corsModule({
-            origins: [{
+            hostnames: [{
                 host: '*'
             }]
         });
@@ -105,7 +105,7 @@ describe('azure-mobile-apps.cors.origin', function() {
 
     it('does not allow anything when whitelist is explicitly empty', function() {
         var cors = corsModule({
-            origins: []
+            hostnames: []
         });
         expect(cors.isAllowedOrigin('http://localhost')).to.be.false;
     });

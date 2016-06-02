@@ -12,7 +12,7 @@ var middleware = require('../../../src/express/middleware/crossOrigin'),
     config = {
         cors: {
             maxAge: 6000,
-            origins: ['localhost', { host: '*.v1.com' }, 'test.*.net']
+            hostnames: ['localhost', { host: '*.v1.com' }, 'test.*.net']
         }
     },
     req = {

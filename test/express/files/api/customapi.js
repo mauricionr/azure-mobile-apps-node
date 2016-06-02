@@ -6,13 +6,14 @@ var api = module.exports = {
     delete: function(req, res, next) {
         res.status(200).end();
     },
-    trace: function(req, res, next) {
-        res.status(500).end();
+    patch: function(req, res, next) {
+        res.status(200).json({ response: req.body.message + '1' });
     }
 };
 
-api.delete.authorise = true;
-api.put.authorise = true;
+api.delete.authorize = true;
+// added via json
+// api.put.authorize = true;
 
 function addHeader(req, res, next) {
     res.set('customapi', 'true');

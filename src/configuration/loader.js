@@ -1,8 +1,12 @@
 // ----------------------------------------------------------------------------
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // ----------------------------------------------------------------------------
-﻿var path = require('path')
-    fs = require('fs');
+var path = require('path'),
+    fs = require('fs'),
+    logger = require('../logger'),
+    merge = require('../utilities/merge'),
+
+    supportedExtensions = ['.js', '.json'];
 
 module.exports = {
     loadPath: function (targetPath, basePath) {
@@ -11,24 +15,49 @@ module.exports = {
 
         // this won't work with other extensions (e.g. .ts, .coffee)
         // perhaps we should use require.resolve here instead - also enables loading modules in other packages
-        if (!fs.existsSync(fullPath)) {
-            if (fs.existsSync(fullPath + '.js'))
-                fullPath += '.js';
-            else
-                throw new Error('Requested configuration path (' + fullPath + ') does not exist');
-        }
+        if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isDirectory()) {
+            // remove path extension
+            var filesPath = fullPath;
+            if(path.extname(fullPath))
+                filesPath = fullPath.slice(0, -path.extname(fullPath).length)
 
-        if (fs.statSync(fullPath).isDirectory())
-            return loadDirectory({}, fullPath);
+            // get all files with supported extensions
+            var filePaths = getFilePaths(filesPath);
+
+            if (filePaths.length) {
+                return loadFiles({}, filePaths);
+            } else {
+                logger.warn('Requested configuration path (' + fullPath + ') does not exist');
+                return {};
+            }
+        }
         else
-            return loadModule({}, fullPath);
+            return loadDirectory({}, fullPath);
     }
 }
 
 function loadModule(target, targetPath) {
-    var moduleName = path.basename(targetPath, path.extname(targetPath)),
-        loadedModule = require(targetPath);
-    target[moduleName] = loadedModule;
+    var extension = path.extname(targetPath),
+        moduleName = path.basename(targetPath, extension),
+        targetModule = target[moduleName] || {},
+        loadedModule;
+
+    if(supportedExtensions.indexOf(extension) > -1) {
+        try {
+            loadedModule = require(targetPath);
+        } catch (err) {
+            logger.error('Unable to load ' + targetPath, err);
+            throw err;
+        }
+        logger.silly('Loaded ' + targetPath);
+
+        merge.getConflictingProperties(targetModule, loadedModule).forEach(function (conflict) {
+            logger.warn('Property \'' + conflict + '\' in module ' + moduleName + ' overwritten by JSON configuration');
+        });
+        // due to lexicographic ordering, .js is loaded before .json
+        target[moduleName] = merge.mergeObjects(targetModule, loadedModule);
+    }
+
     return target;
 }
 
@@ -39,6 +68,22 @@ function loadDirectory(target, targetPath) {
             loadDirectory(target, fullPath);
         else
             loadModule(target, fullPath);
+    });
+    return target;
+}
+
+function getFilePaths(targetPath) {
+    return supportedExtensions.map(function (extension) {
+            return targetPath + extension;
+        })
+        .filter(function (path) {
+            return fs.existsSync(path);
+        });
+}
+
+function loadFiles(target, targetPaths) {
+    targetPaths.forEach(function (path) {
+        loadModule(target, path);
     });
     return target;
 }

@@ -18,7 +18,7 @@ describe('azure-mobile-apps.cors.headers', function() {
 
 	it('Echoes back default max age on preflight requests', function() {
 		var cors = corsModule({
-			origins: [{
+			hostnames: [{
 				host: '*.example.com'
 			}]
 		});
@@ -30,7 +30,7 @@ describe('azure-mobile-apps.cors.headers', function() {
 	it('Echoes back supplied max age on preflight requests', function() {
 		var cors = corsModule({
 			maxAge: 60000,
-			origins: [{
+			hostnames: [{
 				host: '*.example.com'
 			}]
 		});
@@ -41,7 +41,7 @@ describe('azure-mobile-apps.cors.headers', function() {
 
 	it('Echoes back supplied origin if matches whitelist', function() {
 		var cors = corsModule({
-			origins: [{
+			hostnames: [{
 				host: '*.example.com'
 			}]
 		});
@@ -51,7 +51,7 @@ describe('azure-mobile-apps.cors.headers', function() {
 
 	it('Returns no origin header if supplied origin does not match whitelist', function() {
 		var cors = corsModule({
-			origins: [{
+			hostnames: [{
 				host: '*.example.com'
 			}]
 		});
@@ -61,7 +61,7 @@ describe('azure-mobile-apps.cors.headers', function() {
 
 	it('Returns allowed methods header only for preflight requests when origin matches', function() {
 		var cors = corsModule({
-			origins: [{
+			hostnames: [{
 				host: '*.example.com'
 			}]
 		});
@@ -73,7 +73,7 @@ describe('azure-mobile-apps.cors.headers', function() {
 
 	it('Echoes back requested header when origin matches', function() {
 		var cors = corsModule({
-			origins: [{
+			hostnames: [{
 				host: '*.example.com'
 			}]
 		});
@@ -84,7 +84,7 @@ describe('azure-mobile-apps.cors.headers', function() {
 
 	it('Does not return allowed CORS headers if origin does not match', function() {
 		var cors = corsModule({
-			origins: [{
+			hostnames: [{
 				host: '*.example.com'
 			}]
 		});
@@ -95,7 +95,7 @@ describe('azure-mobile-apps.cors.headers', function() {
 
 	it('Does not echo back requested headers if they are malformed', function() {
 		var cors = corsModule({
-			origins: [{
+			hostnames: [{
 				host: '*.example.com'
 			}]
 		});

@@ -1,0 +1,6 @@
+{
+    "put": {
+        "authorize": true
+    },
+    "name": "customapiname"
+}

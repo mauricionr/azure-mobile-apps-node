@@ -4,11 +4,14 @@
 module.exports = {
     // parse an ODBC or ADO.NET connection string into
     parse: function (connectionString) {
+        if (!connectionString)
+            return {};
+
         var properties = parseProperties(connectionString),
             server = parseServer(properties['server'] || properties['data source']);
 
-        return {
-            provider: 'sql',
+        return connectionString && {
+            provider: 'mssql',
             user: properties['user id'] || properties['userid'] || properties['uid'],
             password: properties['password'] || properties['pwd'],
             server: server,

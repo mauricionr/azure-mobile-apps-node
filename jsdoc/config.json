@@ -9,8 +9,8 @@
     "cleverLinks": false,
     "monospaceLinks": true,
     "dateFormat": "ddd MMM Do YYYY",
-    "outputSourceFiles": true,
-    "outputSourcePath": true,
+    "outputSourceFiles": false,
+    "outputSourcePath": false,
     "systemName": "Azure Mobile Apps Node SDK",
     "footer": "",
     "copyright": "Copyright (c) Microsoft and contributors.  All rights reserved.",
@@ -24,14 +24,16 @@
     "methodHeadingReturns": true,
     "encoding": "utf8",
     "private": true,
-    "recurse": true
+    "recurse": true,
+    "sortByName": true,
+    "stripModuleName": "azure-mobile-apps/src"
   },
   "markdown": {
     "parser": "gfm",
-    "hardwrap": true
+    "hardwrap": false
   },
   "source": {
-    "include": ["."],
+    "include": ["src", "jsdoc"],
     "excludePattern": "node_modules",
     "exclude": ["jsdoc/template"]
   },
@@ -39,7 +41,6 @@
     "destination": "./jsdoc/out",
     "readme": "./README.md",
     "recurse": true,
-    "template": "./node_modules/minami",
-    "tutorials": "./jsdoc/tutorials"
+    "template": "./node_modules/minami"
   }
 }

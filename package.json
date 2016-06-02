@@ -1,41 +1,48 @@
 {
   "name": "azure-mobile-apps",
-  "version": "2.0.0-alpha3",
+  "version": "2.1.7",
   "description": "Build mobile apps with data storage, push notifications and offline sync in minutes.",
   "main": "src/index.js",
+  "typings": "typings/main.d.ts",
   "author": "Microsoft",
-  "repository": "Azure/azure-mobile-apps",
+  "repository": "Azure/azure-mobile-apps-node",
   "license": "MIT",
   "scripts": {
     "test": "npm run lint & mocha",
     "lint": "jshint src",
-    "jsdoc": "jsdoc -c jsdoc/config.json"
+    "jsdoc": "jsdoc -c jsdoc/config.json",
+    "typedoc": "typedoc --out typings/doc typings --module commonjs --theme typings/theme --includeDeclarations",
+    "testCI": "mocha --timeout 10000",
+    "travis": "npm run lint & npm run testCI"
   },
   "dependencies": {
-    "jsonwebtoken": "^5.0.2",
-    "es6-promise": "^2.1.1",
-    "winston": "^1.0.1",
-    "underscore": "^1.8.3",
-    "underscore.string": "^3.1.1",
-    "mssql": "^2.1.5",
-    "body-parser": "^1.13.1",
-    "express": "^4.12.4",
-    "node-uuid": "^1.4.3",
+    "azure-odata-sql": "^0.0.3",
+    "azure-query-js": "^0.0.3",
     "azure-sb": "^0.10.2",
-    "query.js": "git://github.com/Azure/queryjs.git"
+    "body-parser": "^1.13.1",
+    "es6-promise": "^3.1.2",
+    "express": "^4.12.4",
+    "jsonwebtoken": "^6.2.0",
+    "mssql": "^3.2.0",
+    "node-uuid": "^1.4.7",
+    "winston": "^2.1.0"
   },
   "devDependencies": {
     "chai": "^3.0.0",
     "chai-as-promised": "^5.0.0",
     "chai-subset": "^1.0.1",
     "jsdoc": "^3.3.2",
-    "jshint": "^2.8.0",
-    "minami": "mamaso/minami",
+    "jshint": "^2.9.1",
+    "minami": "danderson00/minami",
     "mocha": "^2.2.5",
+    "q": "^1.4.1",
     "sinon": "^1.16.1",
     "sinon-as-promised": "4.0.0",
     "sinon-chai": "^2.8.0",
+    "sqlite3": "^3.1.2",
     "supertest": "^1.1.0",
-    "supertest-as-promised": "^2.0.1"
+    "supertest-as-promised": "^3.1.0",
+    "swagger-ui": "^2.1.4",
+    "typedoc": "^0.3.12"
   }
 }

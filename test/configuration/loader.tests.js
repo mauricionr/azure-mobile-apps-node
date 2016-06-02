@@ -7,6 +7,10 @@ var expect = require('chai').expect,
 describe('azure-mobile-apps.configuration.loader', function () {
     var loader = requireWithRefresh('../../src/configuration/loader');
 
+    before(function () {
+        require('../../src/logger').configure();
+    });
+
     it('loads configuration from single file', function () {
         var configuration = loader.loadPath('./files/tables/table1');
         expect(configuration).to.deep.equal({
@@ -35,6 +39,47 @@ describe('azure-mobile-apps.configuration.loader', function () {
         expect(configuration).to.deep.equal({
             table1: { authenticate: true }
         });
+    });
+
+    it('loads with .json extension', function () {
+        var configuration = loader.loadPath('./files/jsontables/table1.json');
+        expect(configuration).to.have.property('table1');
+    });
+
+    it('merges json properties', function () {
+        var configuration = loader.loadPath('./files/jsontables/table1');
+        expect(configuration).to.have.property('table1');
+        var table = configuration.table1;
+        expect(table).to.have.property('json', true);
+        expect(table).to.have.property('authenticate', true);
+        expect(table.func).to.have.property('json', true);
+        expect(table.func.toString()).to.equal('function () { }');
+    });
+
+    it('defaults to json property value', function () {
+        var configuration = loader.loadPath('./files/jsontables/conflictDefinition');
+        expect(configuration).to.deep.equal({
+            conflictDefinition: { source: '.json', deep: { object: { conflict: 2 } }}
+        });
+    });
+
+    it('merges correctly when loading directories', function () {
+        var configuration = loader.loadPath('./files/jsontables');
+        expect(configuration.conflictDefinition).to.deep.equal({ source: '.json', deep: { object: { conflict: 2 } } });
+        var table = configuration.table1;
+        expect(table).to.have.property('json', true);
+        expect(table).to.have.property('authenticate', true);
+        expect(table.func).to.have.property('json', true);
+        expect(table.func.toString()).to.equal('function () { }');
+    });
+    
+    it("loads apis using helper function correctly", function () {
+        var configuration = loader.loadPath('./files/api');
+        expect(configuration.custom1.get).to.be.a('function');
+    });
+
+    it('does not throw when target path does not exist', function () {
+        expect(loader.loadPath('this/path/does/not/exist')).to.deep.equal({});
     });
 });
 

@@ -6,7 +6,7 @@ var parse = require('../../src/configuration/connectionString').parse,
     adoNet = 'Server=tcp:azure-mobile-apps-test.database.windows.net,1433;Database=e2etest-v2-node;User ID=azure-mobile-apps-test@azure-mobile-apps-test;Password=abc123;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;',
     odbc = 'Driver={SQL Server Native Client 11.0};Server=tcp:azure-mobile-apps-test.database.windows.net,1433;Database=e2etest-v2-node;Uid=azure-mobile-apps-test@azure-mobile-apps-test;Pwd=abc123;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;',
     expected = {
-        provider: 'sql',
+        provider: 'mssql',
         user: 'azure-mobile-apps-test@azure-mobile-apps-test',
         password: 'abc123',
         server: 'azure-mobile-apps-test.database.windows.net',

@@ -2,7 +2,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // ----------------------------------------------------------------------------
 /**
-@module azure-mobile-apps/auth/user
+@module azure-mobile-apps/src/auth/user
 @description Encapsulates functionality for authenticated users
 */
 var defaultGetIdentity = require('./getIdentity');
@@ -17,7 +17,7 @@ Create a new user object.
 module.exports = function (authConfiguration, token, claims) {
     return {
         /** The user ID */
-        id: claims.uid,
+        id: claims.sub,
         /** The JWT token */
         token: token,
         /** The authenticated claims */

@@ -1,10 +1,9 @@
 // ----------------------------------------------------------------------------
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // ----------------------------------------------------------------------------
-var Query = require('query.js').Query;
+var Query = require('azure-query-js').Query;
 
 module.exports = function(name, table) {
-    var query;
 
     ['where', 'select', 'orderBy', 'orderByDescending', 'skip', 'take', 'includeTotalCount'].forEach(attachOperator);
 
@@ -12,11 +11,9 @@ module.exports = function(name, table) {
 
     function attachOperator(operator) {
         table[operator] = function () {
-            if(!query) {
-                query = new Query(name);
-                query.read = function () {
-                    return table.read(query);
-                }
+            var query = new Query(name);
+            query.read = function () {
+                return table.read(query);
             }
 
             query[operator].apply(query, arguments);

@@ -3,52 +3,48 @@
 // ----------------------------------------------------------------------------
 var expect = require('chai').expect,
     request = require('supertest-as-promised'),
-    config = require('../infrastructure/config')(),
     auth = require('../../../src/auth')({ secret: 'secret' }),
     token = auth.sign({ "uid": "Facebook:someuserid@hotmail.com" }),
     app, mobileApp;
 
     app = require('express')();
-    config.auth = { secret: 'secret', getIdentity: getIdentity };
-    mobileApp = require('../../../src/express')(config);
+    mobileApps = require('../../appFactory').ignoreEnvironment,
 
-    mobileApp.api.import('../files/api/customapi');
-    mobileApp.api.import('../files/api/authapi');
+    mobileApp = mobileApps({ auth: { secret: 'secret', getIdentity: getIdentity }});
+
+    mobileApp.api.import('express/files/api/customapi');
+    mobileApp.api.import('express/files/api/authapi');
     app.use(mobileApp);
 
 describe('azure-mobile-apps.express.integration.customapi', function () {
     it('returns 200 on existing verb', function () {
-        return request(app).get('/api/customapi').expect(200);
+        return request(app).get('/api/customapiname').expect(200);
     });
 
     it('returns 404 on non-existent verb', function () {
-        return request(app).post('/api/customapi').expect(404);
+        return request(app).post('/api/customapiname').expect(404);
     });
 
     it('returns 401 on authorized verb', function () {
-        return request(app).delete('/api/customapi').expect(401);
+        return request(app).delete('/api/customapiname').expect(401);
     });
 
     it('returns 200 on authorized verb when authorized', function () {
-        return request(app).delete('/api/customapi')
+        return request(app).delete('/api/customapiname')
             .set('x-zumo-auth', token)
             .expect(200);
     });
 
-    it('returns 404 on unsupported verbs', function () {
-        return request(app).trace('/api/customapi').expect(404);
-    });
-
     it('correctly imports middleware array', function () {
-        return request(app).put('/api/customapi')
+        return request(app).put('/api/customapiname')
             .set('x-zumo-auth', token)
             .expect('customapi', 'true')
             .expect(200);
     });
 
     it('returns correct options on preflight', function () {
-        return request(app).options('/api/customapi')
-            .expect('allow', 'GET,HEAD,PUT,DELETE')
+        return request(app).options('/api/customapiname')
+            .expect('allow', 'GET,HEAD,PUT,DELETE,PATCH')
             .expect(200);
     });
 
@@ -56,6 +52,21 @@ describe('azure-mobile-apps.express.integration.customapi', function () {
         return request(app).get('/api/authapi').expect(401)
             .then(function () {
                 return request(app).delete('/api/authapi').expect(401);
+            });
+    });
+
+    it('returns 405 on disabled method', function () {
+        return request(app).post('/api/authapi').expect(405);
+    });
+
+    it('parses json if specified in content-type header', function () {
+        return request(app)
+            .patch('/api/customapiname')
+            .set('content-type', 'application/json')
+            .send({ message: 'test' })
+            .expect(200)
+            .then(function (res) {
+                expect(res.body.response).to.equal('test1');
             });
     });
 });

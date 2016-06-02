@@ -3,10 +3,15 @@
 // ----------------------------------------------------------------------------
 var expect = require('chai').expect,
     supertest = require('supertest-as-promised'),
+    mobileApps = require('../../appFactory'),
     app = require('express')(),
-    mobileApp = require('../../..')();
+    mobileApp;
 
 describe('azure-mobile-apps.express.integration.middleware', function () {
+    before(function () {
+        mobileApp = mobileApps({ data: { provider: 'memory' } });
+    });
+
     it('read middleware is mounted in the correct order', function () {
         return test('read', 'get');
     });
@@ -40,7 +45,7 @@ describe('azure-mobile-apps.express.integration.middleware', function () {
 
         return supertest(app)
             [verb]('/tables/test' + (urlSuffix || ''))
-            .expect(200)
+            .expect(verb === 'post' ? 201 : 200)
             .then(function (res) {
                 expect(results).to.deep.equal([1, 2, 3, 4, 5]);
             });
